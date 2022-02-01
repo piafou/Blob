@@ -1,5 +1,16 @@
 from math import sqrt, atan2, pi
 import numpy as np
+from PIL import Image, ImageDraw
+
+def saveNum(tab,width,height,filename):
+    output_image = Image.new("RGB", (width,height))
+    draw = ImageDraw.Draw(output_image)
+    for x in range(width):
+        for y in range(height):
+            color = int(tab[x, y])
+            draw.point((x, y), (color,color,color))
+    output_image.save(filename)
+
 
 def canny_edge_detector(input_image):
     input_pixels = input_image.load()
@@ -8,15 +19,20 @@ def canny_edge_detector(input_image):
 
     # Transform the image to grayscale
     grayscaled = compute_grayscale(input_pixels, width, height)
+    saveNum(grayscaled,width, height,'grey.png')
 
     # Blur it to remove noise
     blurred = compute_blur(grayscaled, width, height)
+    saveNum(blurred,width, height,'blur.png')
+
+    #blurred= grayscaled
 
     # Compute the gradient
     gradient, direction = compute_gradient(blurred, width, height)
 
     # Non-maximum suppression
     filter_out_non_maximum(gradient, direction, width, height)
+    saveNum(gradient,width, height,'gradient.png')
 
     # Filter out some edges
     keep = filter_strong_edges(gradient, width, height, 20, 25)
@@ -29,7 +45,7 @@ def compute_grayscale(input_pixels, width, height):
     for x in range(width):
         for y in range(height):
             pixel = input_pixels[x, y]
-            grayscale[x, y] = (pixel[0] + pixel[1] + pixel[2]) / 3
+            grayscale[x, y] = int((pixel[0] + pixel[1] + pixel[2]) / 3)
     return grayscale
 
 
@@ -46,6 +62,14 @@ def compute_blur(input_pixels, width, height):
         [1 / 256,  4 / 256,  6 / 256,  4 / 256, 1 / 256]
     ])
 
+    kernel2 = np.array([
+        [1 ,  4 ,  6 ,  4 , 1 ],
+        [4 , 16 , 24 , 16 , 4 ],
+        [6 , 24 , 36 , 24 , 6 ],
+        [4 , 16 , 24 , 16 , 4 ],
+        [1 ,  4 ,  6 ,  4 , 1 ]
+    ])
+
     # Middle of the kernel
     offset = len(kernel) // 2
 
@@ -53,13 +77,13 @@ def compute_blur(input_pixels, width, height):
     blurred = np.empty((width, height))
     for x in range(width):
         for y in range(height):
-            acc = 0
+            acc = 0.000
             for a in range(len(kernel)):
                 for b in range(len(kernel)):
                     xn = clip(x + a - offset, 0, width - 1)
                     yn = clip(y + b - offset, 0, height - 1)
-                    acc += input_pixels[xn, yn] * kernel[a, b]
-            blurred[x, y] = int(acc)
+                    acc += input_pixels[xn, yn] * kernel2[a, b]
+            blurred[x, y] = int(acc/256)
     return blurred
 
 
@@ -112,10 +136,9 @@ def filter_strong_edges(gradient, width, height, low, high):
 
 
 if __name__ == "__main__":
-    from PIL import Image, ImageDraw
-    input_image = Image.open("Blob.jpg")
+    input_image = Image.open("Blob.png")
     output_image = Image.new("RGB", input_image.size)
     draw = ImageDraw.Draw(output_image)
     for x, y in canny_edge_detector(input_image):
-        draw.point((x, y), (255, 255, 0))
+        draw.point((x, y), (255, 255, 255))
     output_image.save("canny.png")

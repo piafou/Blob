@@ -5,7 +5,7 @@ from canny import canny_edge_detector
 from collections import defaultdict
 
 # Load image:
-input_image = Image.open("Blob.jpg")
+input_image = Image.open("Blob.png")
 
 # Output image:
 output_image = Image.new("RGB", input_image.size)
@@ -13,10 +13,10 @@ output_image.paste(input_image)
 draw_result = ImageDraw.Draw(output_image)
 
 # Find circles
-rmin = 500
-rmax =675
+rmin = 814/2
+rmax = 820/2
 steps = 100
-threshold = 0.4
+threshold = 0.2
 
 points = []
 for r in range(rmin, rmax + 1):
@@ -33,8 +33,9 @@ for x, y in canny_edge_detector(input_image):
 circles = []
 for k, v in sorted(acc.items(), key=lambda i: -i[1]):
     x, y, r = k
-    if v / steps >= threshold and all((x - xc) ** 2 + (y - yc) ** 2 > rc ** 2 for xc, yc, rc in circles):
-        print(v / steps, x, y, r)
+    if v *100/ steps >= threshold*100 and all((x - xc) ** 2 + (y - yc) ** 2 > rc ** 2 for xc, yc, rc in circles):
+    #if all((x - xc) ** 2 + (y - yc) ** 2 > rc ** 2 for xc, yc, rc in circles):
+        print(v , x, y, r)
         circles.append((x, y, r))
 
 for x, y, r in circles:
